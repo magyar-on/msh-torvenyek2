@@ -90,6 +90,7 @@
       margin: 0.5rem 0 1rem 0;
       font-weight: 600;
       color: var(--dark-blue);
+      min-height: 1.2rem;
     }
     .results {
       margin-top: 1.5rem;
@@ -112,20 +113,11 @@
       .option-btn { font-size: 0.95rem; }
     }
   </style>
-</head>
-<body>
-  <header>Gyakorold a mássalhangzótörvényeket!</header>
-  <div class="container">
-    <div id="progress" class="progress"></div>
-    <div id="quiz" class="card"></div>
-    <div class="controls">
-      <button id="nextBtn" class="btn" disabled>Tovább</button>
-      <button id="submitBtn" class="btn" style="display:none;">Beküldés</button>
-      <button id="restartBtn" class="btn" style="display:none;">Újrakezdés</button>
-    </div>
-    <div id="results" class="results"></div>
-  </div>
-  <script>
+
+  <!-- A script defer-rel töltődik, biztosan a DOM után fut -->
+  <script defer>
+    'use strict';
+
     const data = [
       ["cukrászda","zöngésség szerinti részleges hasonulás"],
       ["fiúkkal","írásban jelölt teljes hasonulás"],
@@ -163,6 +155,8 @@
     let selectedOption = null;
     const answers = [];
 
+    function $(id){ return document.getElementById(id); }
+
     function shuffle(array){
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -182,13 +176,23 @@
 
     function renderQuestion(){
       selectedOption = null;
-      const nextBtn = document.getElementById('nextBtn');
+      const nextBtn = $('nextBtn');
       nextBtn.disabled = true;
 
-      const [word, correct] = quizData[current];
+      const item = quizData[current];
+      if (!item) {
+        $('quiz').innerHTML = `
+          <div class="word">Nincs elérhető kérdés.</div>
+          <p>Kérlek, indítsd újra a kvízt.</p>
+        `;
+        $('progress').textContent = "Hiba";
+        return;
+      }
+
+      const [word, correct] = item;
       const options = makeOptions(correct);
 
-      const quizEl = document.getElementById('quiz');
+      const quizEl = $('quiz');
       quizEl.innerHTML = `
         <div class="word">${word}</div>
         <div class="options">
@@ -198,8 +202,7 @@
         </div>
       `;
 
-      document.getElementById('progress').textContent =
-  `Kérdés ${current + 1} / ${quizData.length}`;
+      $('progress').textContent = `Kérdés ${current + 1} / ${quizData.length}`;
 
       quizEl.querySelectorAll('.option-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -220,15 +223,16 @@
       if (current < quizData.length) {
         renderQuestion();
       } else {
-        document.getElementById('nextBtn').style.display = 'none';
-        document.getElementById('submitBtn').style.display = 'inline-block';
-        document.getElementById('quiz').innerHTML = `
+        $('nextBtn').style.display = 'none';
+        $('submitBtn').style.display = 'inline-block';
+        $('quiz').innerHTML = `
           <div class="word">Vége a kérdéseknek.</div>
           <p>Nyomd meg a Beküldés gombot az eredményekhez.</p>
         `;
-        document.getElementById('progress').textContent = \`Kész 🎉\`;
+        $('progress').textContent = `Kész 🎉`;
       }
     }
+
     function showResults(){
       let correctCount = 0;
       const listHtml = answers.map(a => {
@@ -245,14 +249,14 @@
         `;
       }).join('');
 
-      document.getElementById('results').innerHTML = `
+      $('results').innerHTML = `
         <h3>Eredmények</h3>
         <p><strong>Összes jó válasz:</strong> ${correctCount} / ${answers.length}</p>
         ${listHtml}
       `;
 
-      document.getElementById('restartBtn').style.display = 'inline-block';
-      document.getElementById('submitBtn').disabled = true;
+      $('restartBtn').style.display = 'inline-block';
+      $('submitBtn').disabled = true;
     }
 
     function restart(){
@@ -261,33 +265,49 @@
       selectedOption = null;
       answers.length = 0;
 
-      document.getElementById('results').innerHTML = '';
-      document.getElementById('submitBtn').style.display = 'none';
-      document.getElementById('submitBtn').disabled = false;
-      document.getElementById('nextBtn').style.display = 'inline-block';
-      document.getElementById('restartBtn').style.display = 'none';
+      $('results').innerHTML = '';
+      $('submitBtn').style.display = 'none';
+      $('submitBtn').disabled = false;
+      $('nextBtn').style.display = 'inline-block';
+      $('restartBtn').style.display = 'none';
 
       renderQuestion();
     }
-
-    document.getElementById('nextBtn').addEventListener('click', nextQuestion);
-    document.getElementById('submitBtn').addEventListener('click', showResults);
-    document.getElementById('restartBtn').addEventListener('click', restart);
 
     function init(){
       quizData = shuffle([...data]).filter(item => Array.isArray(item) && item.length === 2);
       current = 0;
       answers.length = 0;
-      document.getElementById('results').innerHTML = '';
-      document.getElementById('submitBtn').style.display = 'none';
-      document.getElementById('restartBtn').style.display = 'none';
-      document.getElementById('nextBtn').style.display = 'inline-block';
+      $('results').innerHTML = '';
+      $('submitBtn').style.display = 'none';
+      $('restartBtn').style.display = 'none';
+      $('nextBtn').style.display = 'inline-block';
       renderQuestion();
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-  init();
-});
+    // Biztos futás: DOM után indul
+    window.addEventListener('DOMContentLoaded', () => {
+      // Elemek bekötése
+      $('nextBtn').addEventListener('click', nextQuestion);
+      $('submitBtn').addEventListener('click', showResults);
+      $('restartBtn').addEventListener('click', restart);
+
+      init();
+    });
   </script>
+</head>
+<body>
+  <header>Gyakorold a mássalhangzótörvényeket!</header>
+  <div class="container">
+    <div id="progress" class="progress"></div>
+    <div id="quiz" class="card"></div>
+    <div class="controls">
+      <button id="nextBtn" class="btn" disabled>Tovább</button>
+      <button id="submitBtn" class="btn" style="display:none;">Beküldés</button>
+      <button id="restartBtn" class="btn" style="display:none;">Újrakezdés</button>
+    </div>
+    <div id="results" class="results"></div>
+  </div>
 </body>
 </html>
+
