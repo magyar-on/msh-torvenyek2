@@ -199,7 +199,7 @@
       `;
 
       document.getElementById('progress').textContent =
-        \`Kérdés \${current + 1} / \${quizData.length}\`;
+  `Kérdés ${current + 1} / ${quizData.length}`;
 
       quizEl.querySelectorAll('.option-btn').forEach(btn => {
         btn.addEventListener('click', () => {
